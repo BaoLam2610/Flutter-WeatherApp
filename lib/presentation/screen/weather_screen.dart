@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -19,28 +18,19 @@ class WeatherScreen extends StatefulWidget {
 }
 
 class _WeatherScreenState extends State<WeatherScreen> {
-  bool isLoading = false;
-
-  void setLoading(bool loading) {
-    setState(() {
-      isLoading = loading;
-    });
-  }
-
-  Future getCurrentWeather() async {
-    setLoading(true);
+  Future<Map<String, dynamic>> getCurrentWeather() async {
     try {
       final response = await http.get(
         Uri.parse(apiUrl),
       );
 
-      setLoading(false);
+      final data = jsonDecode(response.body);
       if (response.statusCode != 200) {
-        throw const HttpException("Error");
+        throw data['message'];
       }
-      jsonDecode(response.body);
       debugPrint("lamnb:${response.statusCode}");
       debugPrint("lamnb:${response.body}");
+      return data;
     } catch (e) {
       throw e.toString();
     }
@@ -65,7 +55,9 @@ class _WeatherScreenState extends State<WeatherScreen> {
         centerTitle: true,
         actions: [
           IconButton(
-            onPressed: () { getCurrentWeather(); },
+            onPressed: () {
+              getCurrentWeather();
+            },
             icon: const Icon(Icons.refresh),
           )
         ],
@@ -74,23 +66,67 @@ class _WeatherScreenState extends State<WeatherScreen> {
     );
   }
 
-  Widget weatherBody() => isLoading
-      ? const Center(child: CircularProgressIndicator())
-      : Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              temperatureTodaySection(),
-              const SizedBox(height: 20),
-              weatherForecastSection(),
-              const SizedBox(height: 20),
-              additionalInfoSection(),
-            ],
-          ),
-        );
+  Widget weatherBody() => FutureBuilder(
+        future: getCurrentWeather(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator.adaptive(),
+            );
+          }
 
-  Widget temperatureTodaySection() => SizedBox(
+          if (snapshot.hasError) {
+            return Center(
+              child: Text(
+                snapshot.error.toString(),
+                style: const TextStyle(fontSize: 32),
+              ),
+            );
+          }
+
+          if (!snapshot.hasData) {
+            return const Center(
+              child: Text(
+                "Empty data",
+                style: TextStyle(fontSize: 32),
+              ),
+            );
+          }
+
+          final data = snapshot.data!;
+          final weatherData = data['list'][0];
+          final temp = weatherData['main']['temp'].toString();
+          final status = weatherData['weather'][0]['description'].toString();
+
+          final humidity = weatherData['main']['humidity'].toString();
+          final pressure = weatherData['main']['pressure'].toString();
+          final windSpeed = weatherData['wind']['speed'].toString();
+
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                temperatureTodaySection(temp: temp, status: status),
+                const SizedBox(height: 20),
+                weatherForecastSection(),
+                const SizedBox(height: 20),
+                additionalInfoSection(
+                  humidity: humidity,
+                  windSpeed: windSpeed,
+                  pressure: pressure,
+                ),
+              ],
+            ),
+          );
+        },
+      );
+
+  Widget temperatureTodaySection({
+    required String temp,
+    required String status,
+  }) =>
+      SizedBox(
         width: double.infinity,
         child: Card(
           elevation: 10,
@@ -103,23 +139,23 @@ class _WeatherScreenState extends State<WeatherScreen> {
                 sigmaX: 10,
                 sigmaY: 10,
               ),
-              child: const Padding(
-                padding: EdgeInsets.all(10.0),
+              child: Padding(
+                padding: const EdgeInsets.all(10.0),
                 child: Column(
                   children: [
                     Text(
-                      "29°C",
-                      style:
-                          TextStyle(fontSize: 40, fontWeight: FontWeight.bold),
+                      "$temp°C",
+                      style: const TextStyle(
+                          fontSize: 40, fontWeight: FontWeight.bold),
                     ),
-                    Icon(
+                    const Icon(
                       Icons.cloud,
                       color: Colors.white,
                       size: 64,
                     ),
                     Text(
-                      "Rain",
-                      style: TextStyle(fontSize: 16),
+                      status,
+                      style: const TextStyle(fontSize: 16),
                     )
                   ],
                 ),
@@ -175,7 +211,12 @@ class _WeatherScreenState extends State<WeatherScreen> {
         ],
       );
 
-  Widget additionalInfoSection() => Column(
+  Widget additionalInfoSection({
+    required String humidity,
+    required String windSpeed,
+    required String pressure,
+  }) =>
+      Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
@@ -190,21 +231,21 @@ class _WeatherScreenState extends State<WeatherScreen> {
                 weatherInfo: WeatherInfo(
                   icon: Icons.water_drop,
                   label: "Humidity",
-                  value: "94",
+                  value: humidity,
                 ),
               ),
               WeatherInfoItem(
                 weatherInfo: WeatherInfo(
                   icon: Icons.air,
                   label: "Wind speed",
-                  value: "7.6",
+                  value: windSpeed,
                 ),
               ),
               WeatherInfoItem(
                 weatherInfo: WeatherInfo(
                   icon: Icons.beach_access_outlined,
                   label: "Pressure",
-                  value: "1006",
+                  value: pressure,
                 ),
               ),
             ],
