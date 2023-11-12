@@ -1,35 +1,43 @@
 import 'package:flutter/material.dart';
+import 'package:weather_app/domain/model/weather_forecast.dart';
 
 class WeatherForecastItem extends StatelessWidget {
-  const WeatherForecastItem({super.key});
+  final WeatherForecast _weatherForecast;
+
+  const WeatherForecastItem(
+      {super.key, required WeatherForecast weatherForecast})
+      : _weatherForecast = weatherForecast;
 
   @override
   Widget build(BuildContext context) {
-    return const Card(
+    return Card(
       elevation: 6,
-      shape: RoundedRectangleBorder(
+      shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.all(Radius.circular(32)),
       ),
       child: SizedBox(
         width: 120,
         child: Padding(
-          padding: EdgeInsets.symmetric(vertical: 18.0),
+          padding: const EdgeInsets.symmetric(vertical: 18.0),
           child: Column(
             children: [
               Text(
-                "03:00",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                _weatherForecast.hour,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-              SizedBox(height: 10),
+              const SizedBox(height: 10),
               Icon(
-                Icons.cloud,
+                _weatherForecast.icon,
                 color: Colors.white,
                 size: 32,
               ),
-              SizedBox(height: 10),
+              const SizedBox(height: 10),
               Text(
-                "29°C",
-                style: TextStyle(fontSize: 16),
+                _weatherForecast.temperature,
+                style: const TextStyle(fontSize: 16),
               ),
             ],
           ),

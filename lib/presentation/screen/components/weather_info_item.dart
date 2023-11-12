@@ -1,32 +1,29 @@
 import 'package:flutter/material.dart';
 
-class WeatherInfoItem extends StatelessWidget {
-  const WeatherInfoItem(
-      {super.key,
-      required this.icon,
-      required this.label,
-      required this.value});
+import '../../../domain/model/weather_info.dart';
 
-  final IconData icon;
-  final String label;
-  final String value;
+class WeatherInfoItem extends StatelessWidget {
+  final WeatherInfo _weatherInfo;
+
+  const WeatherInfoItem({super.key, required WeatherInfo weatherInfo})
+      : _weatherInfo = weatherInfo;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
         Icon(
-          icon,
+          _weatherInfo.icon,
           size: 32,
         ),
         const SizedBox(height: 6),
         Text(
-          label,
+          _weatherInfo.label,
           style: const TextStyle(fontSize: 16),
         ),
         const SizedBox(height: 6),
         Text(
-          value,
+          _weatherInfo.value,
           style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
       ],
