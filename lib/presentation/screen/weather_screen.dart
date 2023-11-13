@@ -3,6 +3,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 import 'package:weather_app/domain/model/weather_forecast.dart';
 import 'package:weather_app/domain/model/weather_info.dart';
 import 'package:weather_app/presentation/screen/components/weather_info_item.dart';
@@ -18,6 +19,8 @@ class WeatherScreen extends StatefulWidget {
 }
 
 class _WeatherScreenState extends State<WeatherScreen> {
+  late Future<Map<String, dynamic>> getWeatherData;
+
   Future<Map<String, dynamic>> getCurrentWeather() async {
     try {
       final response = await http.get(
@@ -28,8 +31,6 @@ class _WeatherScreenState extends State<WeatherScreen> {
       if (response.statusCode != 200) {
         throw data['message'];
       }
-      debugPrint("lamnb:${response.statusCode}");
-      debugPrint("lamnb:${response.body}");
       return data;
     } catch (e) {
       throw e.toString();
@@ -39,7 +40,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
   @override
   void initState() {
     super.initState();
-    getCurrentWeather();
+    getWeatherData = getCurrentWeather();
   }
 
   @override
@@ -56,7 +57,9 @@ class _WeatherScreenState extends State<WeatherScreen> {
         actions: [
           IconButton(
             onPressed: () {
-              getCurrentWeather();
+              setState(() {
+                getWeatherData = getCurrentWeather();
+              });
             },
             icon: const Icon(Icons.refresh),
           )
@@ -67,7 +70,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
   }
 
   Widget weatherBody() => FutureBuilder(
-        future: getCurrentWeather(),
+        future: getWeatherData,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
@@ -109,7 +112,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
               children: [
                 temperatureTodaySection(temp: temp, status: status),
                 const SizedBox(height: 20),
-                weatherForecastSection(),
+                weatherForecastSection(data: data),
                 const SizedBox(height: 20),
                 additionalInfoSection(
                   humidity: humidity,
@@ -165,7 +168,8 @@ class _WeatherScreenState extends State<WeatherScreen> {
         ),
       );
 
-  Widget weatherForecastSection() => Column(
+  Widget weatherForecastSection({required dynamic data}) =>
+      Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
@@ -173,40 +177,22 @@ class _WeatherScreenState extends State<WeatherScreen> {
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 10),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                WeatherForecastItem(
-                  weatherForecast: WeatherForecast(
-                    icon: Icons.cloud,
-                    hour: "09:00",
-                    temperature: "29°C",
-                  ),
+          SizedBox(
+            height: 150,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: 5,
+              itemBuilder: (context, index) {
+              final weatherForecast = data['list'][index + 1];
+              final time = DateTime.parse(weatherForecast['dt_txt']);
+              return WeatherForecastItem(
+                weatherForecast: WeatherForecast(
+                  icon: Icons.cloud,
+                  hour: DateFormat.Hm().format(time),
+                  temperature: "${weatherForecast['main']['temp']}°C",
                 ),
-                WeatherForecastItem(
-                  weatherForecast: WeatherForecast(
-                    icon: Icons.sunny,
-                    hour: "10:00",
-                    temperature: "30°C",
-                  ),
-                ),
-                WeatherForecastItem(
-                  weatherForecast: WeatherForecast(
-                    icon: Icons.sunny,
-                    hour: "11:00",
-                    temperature: "31°C",
-                  ),
-                ),
-                WeatherForecastItem(
-                  weatherForecast: WeatherForecast(
-                    icon: Icons.cloud,
-                    hour: "12:00",
-                    temperature: "27°C",
-                  ),
-                ),
-              ],
-            ),
+              );
+            },),
           )
         ],
       );

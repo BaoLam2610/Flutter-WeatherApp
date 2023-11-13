@@ -27,6 +27,7 @@ class WeatherForecastItem extends StatelessWidget {
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                 ),
+                maxLines: 1,
               ),
               const SizedBox(height: 10),
               Icon(
